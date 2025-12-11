@@ -122,6 +122,7 @@
   </div>
 </section>
 
+<!-- Modals الدفع -->
 <div id="modal-whatsapp" class="modal"><div class="box">
   <button class="close-x" onclick="closeModal('whatsapp')">✕</button>
   <h3>دفع واتساب</h3>
@@ -157,9 +158,11 @@ const firebaseConfig = {
   messagingSenderId: "1024483166692",
   appId: "1:1024483166692:web:1d6c39a212f323c1d19ff1"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const auth = firebase.auth();
+const ADMIN_EMAIL = 'mixhup@gmail.com';
 
 const pages = {
   index: document.getElementById('page-index'),
@@ -169,52 +172,41 @@ const pages = {
   register: document.getElementById('page-register')
 };
 const loginBtn = document.getElementById('login-btn');
-const ADMIN_EMAIL = 'mixhupstore8@gmail.com';
-
 let currentCategory = 'الكل';
 
 function showPage(name){
   for(const k in pages) pages[k].style.display = 'none';
-  
-  if(name === 'admin'){
+  if(name==='admin'){
     const user = auth.currentUser;
     if(!user || user.email !== ADMIN_EMAIL){
       showToast('غير مصرح بالدخول للوحة التحكم');
-      pages.login.style.display = 'block';
-      loginBtn.style.display = 'inline-block';
+      pages.login.style.display='block';
+      loginBtn.style.display='inline-block';
       return;
     }
-    pages.admin.style.display = 'block';
+    pages.admin.style.display='block';
     return;
   }
-
-  if(name === 'index' || name === 'cart') pages[name].style.display = 'flex';
-  else pages[name].style.display = 'block';
-
-  loginBtn.style.display = auth.currentUser ? 'none' : 'inline-block';
+  pages[name].style.display = (name==='index'||name==='cart') ? 'flex':'block';
+  loginBtn.style.display = auth.currentUser ? 'none':'inline-block';
 }
 
 function showToast(msg){
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.innerText = msg;
-  document.body.appendChild(t);
-  setTimeout(()=> t.remove(), 2800);
+  const t=document.createElement('div'); t.className='toast'; t.innerText=msg;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2800);
 }
 
 function copyText(id){
-  const txt = document.getElementById(id).innerText || document.getElementById(id).textContent;
-  navigator.clipboard.writeText(txt).then(()=> showToast('تم النسخ'));
+  const txt=document.getElementById(id).innerText || document.getElementById(id).textContent;
+  navigator.clipboard.writeText(txt).then(()=>showToast('تم النسخ'));
 }
 
 function openModal(type){
-  if(type==='whatsapp'){
-    prepareWhatsappButton();
-    document.getElementById('modal-whatsapp').style.display = 'flex';
-  } else if(type==='vodafone') document.getElementById('modal-vodafone').style.display = 'flex';
-  else if(type==='instapay') document.getElementById('modal-instapay').style.display = 'flex';
+  if(type==='whatsapp'){ prepareWhatsappButton(); document.getElementById('modal-whatsapp').style.display='flex'; }
+  else if(type==='vodafone') document.getElementById('modal-vodafone').style.display='flex';
+  else if(type==='instapay') document.getElementById('modal-instapay').style.display='flex';
 }
-function closeModal(type){ document.getElementById('modal-'+type).style.display = 'none'; }
+function closeModal(type){ document.getElementById('modal-'+type).style.display='none'; }
 
 let productsCache = {};
 const productsContainer = document.getElementById('products');
@@ -224,31 +216,27 @@ const categoriesDiv = document.getElementById('categories');
 function renderCategories(data){
   const allCats = new Set(['الكل']);
   for(const id in data) if(data[id].category) allCats.add(data[id].category);
-  categoriesDiv.innerHTML = '';
+  categoriesDiv.innerHTML='';
   allCats.forEach(cat=>{
-    const btn = document.createElement('button');
+    const btn=document.createElement('button');
     btn.className='category-btn'+(cat===currentCategory?' selected':'');
-    btn.innerText = cat;
-    btn.onclick = ()=> { currentCategory=cat; renderProductsList(productsCache); renderCategories(productsCache); };
+    btn.innerText=cat;
+    btn.onclick=()=>{ currentCategory=cat; renderProductsList(productsCache); renderCategories(productsCache); };
     categoriesDiv.appendChild(btn);
   });
 }
 
 function renderProductsList(data){
-  productsCache = data;
-  productsContainer.innerHTML = '';
+  productsCache=data;
+  productsContainer.innerHTML='';
   for(const id in data){
-    const p = data[id];
-    if(currentCategory!=='الكل' && p.category!==currentCategory) continue;
-    const colors = p.colors ? p.colors.split(',').map(s=>s.trim()).filter(Boolean) : [];
-    const card = document.createElement('div'); card.className = 'product-card';
-    card.innerHTML = `
+    const p=data[id]; if(currentCategory!=='الكل' && p.category!==currentCategory) continue;
+    const colors = p.colors? p.colors.split(',').map(s=>s.trim()).filter(Boolean):[];
+    const card=document.createElement('div'); card.className='product-card';
+    card.innerHTML=`
       <img src="${escapeHtml(p.image||'')}" alt="${escapeHtml(p.name||'')}">
       <h3>${escapeHtml(p.name||'')}</h3>
-      <p>
-        <span class="price-old">${p.priceOld ? (p.priceOld + ' جنيه') : ''}</span>
-        <span class="price-new">${p.price} جنيه</span>
-      </p>
+      <p><span class="price-old">${p.priceOld?p.priceOld+' جنيه':''}</span> <span class="price-new">${p.price} جنيه</span></p>
       <div class="color-row">${colors.map(c=>`<button class="color-btn" onclick="selectColor('${id}','${escapeHtml(c)}',this)">${escapeHtml(c)}</button>`).join('')}</div>
       <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
         <input type="number" id="qty-${id}" min="1" value="1">
@@ -259,12 +247,11 @@ function renderProductsList(data){
   }
 
   // لوحة الإدارة
-  adminProducts.innerHTML = '';
+  adminProducts.innerHTML='';
   for(const id in data){
-    const p = data[id];
-    const div = document.createElement('div'); div.className='product-card';
-    div.style.width='180px';
-    div.innerHTML = `<img src="${escapeHtml(p.image||'')}" alt="${escapeHtml(p.name||'')}"><h4>${escapeHtml(p.name||'')}</h4><p>${p.price} جنيه</p><div style="display:flex;gap:6px;justify-content:center"><button class="btn small" onclick="deleteProduct('${id}')">حذف</button></div>`;
+    const p=data[id];
+    const div=document.createElement('div'); div.className='product-card'; div.style.width='180px';
+    div.innerHTML=`<img src="${escapeHtml(p.image||'')}" alt="${escapeHtml(p.name||'')}"><h4>${escapeHtml(p.name||'')}</h4><p>${p.price} جنيه</p><div style="display:flex;gap:6px;justify-content:center"><button class="btn small" onclick="deleteProduct('${id}')">حذف</button></div>`;
     adminProducts.appendChild(div);
   }
 
@@ -273,163 +260,90 @@ function renderProductsList(data){
 
 function escapeHtml(s){ if(!s) return ''; return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
 
-db.ref('products').on('value', snap=>{
-  const data = snap.val() || {};
-  renderProductsList(data);
-});
+db.ref('products').on('value', snap=>{ renderProductsList(snap.val()||{}); });
 
-let cart = {};
-let selectedColors = {};
-
-function selectColor(productId, color, btnEl){
-  selectedColors[productId] = color;
-  const parent = btnEl.parentElement;
-  parent.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('selected'));
-  btnEl.classList.add('selected');
-}
+let cart={}; let selectedColors={};
+function selectColor(productId,color,btnEl){ selectedColors[productId]=color; btnEl.parentElement.querySelectorAll('.color-btn').forEach(b=>b.classList.remove('selected')); btnEl.classList.add('selected'); }
 
 function addToCart(id){
-  const qtyInput = document.getElementById(`qty-${id}`);
-  const qty = Math.max(1, parseInt(qtyInput?.value || 1));
-  const color = selectedColors[id] || '';
-  const p = productsCache[id];
-  if(!p){ showToast('خطأ: المنتج غير موجود'); return; }
-  if(cart[id]) cart[id].quantity += qty;
-  else cart[id] = { id, quantity: qty, color, name: p.name, price: p.price };
-  loadCart();
-  showToast('تم الإضافة للعربة');
+  const qty=parseInt(document.getElementById(`qty-${id}`)?.value||1);
+  const p=productsCache[id]; if(!p){ showToast('خطأ: المنتج غير موجود'); return; }
+  if(cart[id]) cart[id].quantity+=qty; else cart[id]={id,quantity:qty,color:selectedColors[id]||'',name:p.name,price:p.price};
+  loadCart(); showToast('تم الإضافة للعربة');
 }
 
 function loadCart(){
-  const ctr = document.getElementById('cart-items');
-  ctr.innerHTML = '';
-  let total = 0;
+  const ctr=document.getElementById('cart-items'); ctr.innerHTML=''; let total=0;
   for(const id in cart){
-    const item = cart[id];
-    const p = productsCache[id];
-    if(p){ item.name = p.name; item.price = p.price; }
-    total += (item.price || 0) * item.quantity;
-        const div = document.createElement('div'); div.className='cart-item';
-    div.innerHTML = `
-      <img src="${escapeHtml((productsCache[id]?.image)||'')}" alt="${escapeHtml(item.name)}" />
-      <div class="meta">
-        <div style="font-weight:800">${escapeHtml(item.name)} ${item.color? ' ('+escapeHtml(item.color)+')':''}</div>
-        <div style="color:var(--muted)">${item.price} جنيه × ${item.quantity} = ${(item.price*item.quantity)} جنيه</div>
-      </div>
+    const item=cart[id]; const p=productsCache[id]; if(p){ item.name=p.name; item.price=p.price; }
+    total+=(item.price||0)*item.quantity;
+    const div=document.createElement('div'); div.className='cart-item';
+    div.innerHTML=`
+      <img src="${escapeHtml(productsCache[id]?.image||'')}" alt="${escapeHtml(item.name)}" />
+      <div class="meta"><div style="font-weight:800">${escapeHtml(item.name)} ${item.color? ' ('+escapeHtml(item.color)+')':''}</div>
+      <div style="color:var(--muted)">${item.price} جنيه × ${item.quantity} = ${(item.price*item.quantity)} جنيه</div></div>
       <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-        <div>
-          <button class="small btn" onclick="changeQty('${id}',-1)">−</button>
-          <button class="small btn" onclick="changeQty('${id}',1)">+</button>
-        </div>
+        <div><button class="small btn" onclick="changeQty('${id}',-1)">−</button><button class="small btn" onclick="changeQty('${id}',1)">+</button></div>
         <button class="small" onclick="removeItem('${id}')">حذف</button>
       </div>
     `;
     ctr.appendChild(div);
   }
-  document.getElementById('total-price').innerText = 'الإجمالي: ' + total + ' جنيه';
+  document.getElementById('total-price').innerText='الإجمالي: '+total+' جنيه';
 }
 
-function changeQty(id, delta){
-  if(!cart[id]) return;
-  cart[id].quantity = Math.max(1, cart[id].quantity + delta);
-  loadCart();
-}
-
+function changeQty(id,delta){ if(!cart[id]) return; cart[id].quantity=Math.max(1,cart[id].quantity+delta); loadCart(); }
 function removeItem(id){ delete cart[id]; loadCart(); showToast('تم الحذف'); }
 
-const PAY_NUMBER = '+201122831032';
-
+const PAY_NUMBER='+201122831032';
 function prepareWhatsappButton(){
-  const btn = document.getElementById('wa-btn');
-  btn.onclick = async ()=>{
-    let msg = 'طلب شراء من Mixhup Store:%0A';
-    let total = 0;
-    for(const id in cart){
-      const it = cart[id];
-      msg += `${it.quantity} x ${escapeForUrl(it.name)} ${it.color? '('+escapeForUrl(it.color)+')':''} - ${it.price} جنيه%0A`;
-      total += (it.price || 0) * it.quantity;
-    }
-    msg += `الإجمالي: ${total} جنيه%0A`;
-    window.open('https://wa.me/' + PAY_NUMBER.replace(/\D/g,'') + '?text=' + msg, '_blank');
+  const btn=document.getElementById('wa-btn');
+  btn.onclick=()=>{
+    let msg='طلب شراء من Mixhup Store:%0A'; let total=0;
+    for(const id in cart){ const it=cart[id]; msg+=`${it.quantity} x ${escapeForUrl(it.name)} ${it.color? '('+escapeForUrl(it.color)+')':''} - ${it.price} جنيه%0A`; total+=(it.price||0)*it.quantity; }
+    msg+=`الإجمالي: ${total} جنيه%0A`;
+    window.open('https://wa.me/'+PAY_NUMBER.replace(/\D/g,'')+'?text='+msg,'_blank');
   };
 }
 function escapeForUrl(s){ if(!s) return ''; return encodeURIComponent(s); }
 
 function userLogin(){
-  const email = document.getElementById('user-email').value.trim();
-  const pass  = document.getElementById('user-pass').value.trim();
-  const remember = document.getElementById('remember-me').checked;
+  const email=document.getElementById('user-email').value.trim();
+  const pass=document.getElementById('user-pass').value.trim();
+  const remember=document.getElementById('remember-me').checked;
   if(!email || !pass){ showToast('اكمل البيانات'); return; }
-  auth.signInWithEmailAndPassword(email, pass)
-    .then(()=> {
-      loginBtn.style.display = 'none';
-      if(remember) localStorage.setItem('savedUser', JSON.stringify({email,pass}));
-      else localStorage.removeItem('savedUser');
-      showPage('index');
-      showToast('تم تسجيل الدخول');
-    })
-    .catch(err=> showToast(err.message));
+  auth.signInWithEmailAndPassword(email,pass).then(()=>{ loginBtn.style.display='none'; if(remember) localStorage.setItem('savedUser',JSON.stringify({email,pass})); else localStorage.removeItem('savedUser'); showPage('index'); showToast('تم تسجيل الدخول'); }).catch(err=>showToast(err.message));
 }
 
 function userRegister(){
-  const email = document.getElementById('reg-email').value.trim();
-  const pass  = document.getElementById('reg-pass').value.trim();
-  const remember = document.getElementById('reg-remember-me').checked;
+  const email=document.getElementById('reg-email').value.trim();
+  const pass=document.getElementById('reg-pass').value.trim();
+  const remember=document.getElementById('reg-remember-me').checked;
   if(!email || !pass){ showToast('اكمل البيانات'); return; }
-  auth.createUserWithEmailAndPassword(email, pass)
-    .then(()=> {
-      loginBtn.style.display = 'none';
-      if(remember) localStorage.setItem('savedUser', JSON.stringify({email,pass}));
-      else localStorage.removeItem('savedUser');
-      showPage('index');
-      showToast('تم إنشاء الحساب وتسجيل الدخول');
-    })
-    .catch(err=> showToast(err.message));
+  auth.createUserWithEmailAndPassword(email,pass).then(()=>{ loginBtn.style.display='none'; if(remember) localStorage.setItem('savedUser',JSON.stringify({email,pass})); else localStorage.removeItem('savedUser'); showPage('index'); showToast('تم إنشاء الحساب وتسجيل الدخول'); }).catch(err=>showToast(err.message));
 }
 
-window.addEventListener('load', ()=>{
-  const saved = localStorage.getItem('savedUser');
-  if(saved){
-    try{
-      const {email,pass} = JSON.parse(saved);
-      if(email && pass){
-        auth.signInWithEmailAndPassword(email, pass)
-          .then(()=> { showPage('index'); loginBtn.style.display='none'; })
-          .catch(()=> { localStorage.removeItem('savedUser'); showPage('login'); loginBtn.style.display='inline-block' });
-        return;
-      }
-    }catch(e){ localStorage.removeItem('savedUser'); }
-  }
+window.addEventListener('load',()=>{
+  const saved=localStorage.getItem('savedUser');
+  if(saved){ try{ const {email,pass}=JSON.parse(saved); if(email && pass){ auth.signInWithEmailAndPassword(email,pass).then(()=>{ showPage('index'); loginBtn.style.display='none'; }).catch(()=>{ localStorage.removeItem('savedUser'); showPage('login'); loginBtn.style.display='inline-block'; }); return; } }catch(e){ localStorage.removeItem('savedUser'); } }
   showPage('login');
 });
 
-auth.onAuthStateChanged(user=>{ loginBtn.style.display = user ? 'none' : 'inline-block'; });
+auth.onAuthStateChanged(user=>{ loginBtn.style.display=user?'none':'inline-block'; });
 
 function addProduct(){
-  const name = document.getElementById('prod-name').value.trim();
-  const price = parseFloat(document.getElementById('prod-price').value);
-  const priceOld = parseFloat(document.getElementById('prod-price-old').value) || null;
-  const colors = document.getElementById('prod-colors').value.trim();
-  const category = document.getElementById('prod-category').value.trim();
-  const image = document.getElementById('prod-image').value.trim();
-  if(!name || !price || !image || !category){ showToast('اكمل الحقول المطلوبة'); return; }
-  const newRef = db.ref('products').push();
-  newRef.set({ name, price, priceOld, colors, category, image })
-    .then(()=> {
-      showToast('تم إضافة المنتج');
-      document.getElementById('prod-name').value=''; document.getElementById('prod-price').value=''; document.getElementById('prod-price-old').value=''; document.getElementById('prod-colors').value=''; document.getElementById('prod-category').value=''; document.getElementById('prod-image').value='';
-    })
-    .catch(e=> showToast('خطأ: ' + e.message));
+  const name=document.getElementById('prod-name').value.trim();
+  const price=parseFloat(document.getElementById('prod-price').value);
+  const priceOld=parseFloat(document.getElementById('prod-price-old').value)||null;
+  const colors=document.getElementById('prod-colors').value.trim();
+  const category=document.getElementById('prod-category').value.trim();
+  const image=document.getElementById('prod-image').value.trim();
+  if(!name||!price||!image||!category){ showToast('اكمل الحقول المطلوبة'); return; }
+  db.ref('products').push().set({name,price,priceOld,colors,category,image}).then(()=>{ showToast('تم إضافة المنتج'); document.getElementById('prod-name').value=''; document.getElementById('prod-price').value=''; document.getElementById('prod-price-old').value=''; document.getElementById('prod-colors').value=''; document.getElementById('prod-category').value=''; document.getElementById('prod-image').value=''; }).catch(e=>showToast('خطأ: '+e.message));
 }
 
-function deleteProduct(id){
-  if(!confirm('متأكد من حذف المنتج؟')) return;
-  db.ref('products/'+id).remove().then(()=> showToast('تم الحذف')).catch(e=> showToast('خطأ: '+e.message));
-}
-
-function logoutAdmin(){
-  auth.signOut().then(()=> { showPage('login'); showToast('تم تسجيل الخروج'); }).catch(()=>{});
-}
+function deleteProduct(id){ if(!confirm('متأكد من حذف المنتج؟')) return; db.ref('products/'+id).remove().then(()=>showToast('تم الحذف')).catch(e=>showToast('خطأ: '+e.message)); }
+function logoutAdmin(){ auth.signOut().then(()=>{ showPage('login'); showToast('تم تسجيل الخروج'); }).catch(()=>{}); }
 
 </script>
 </body>
